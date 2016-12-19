@@ -1,0 +1,134 @@
+﻿@model Library.Models.FullBook
+@using Microsoft.AspNet.Identity
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>
+    <span>@Model.Title</span>
+    <span> by </span>
+    <span>@Model.Authors</span>
+</h2>
+
+<h4>@Model.Description</h4>
+
+<table id = "bookTable" class="table table-hover">
+    <thead>
+        <tr>
+            <th>Email of the user</th>
+            <th>Book was taken</th>
+            <th>Book was returned</th>
+        </tr>
+    </thead>
+</table>
+
+<nav class="text-center">
+    <ul class="pagination">
+        <li class="pag_prev">
+            <a href="#bookTable" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        <li class="pag_next">
+            <a href="#bookTable" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+@section scripts {
+    <script>
+    var listOfBooks;
+	var notReturnedBooks;
+	var bookIndex;
+	pageSize = 10;
+	var currentPage = 1;
+    var uId = '@User.Identity.GetUserId()';
+
+	function getBooksHistory() {
+		$.get("/api/bookhistory/" + @Model.Id, function(data, status){
+            window.listOfBooks = data;
+            console.log(listOfBooks);
+			drawTable();
+			drawPageNumbers();
+        });
+	}
+
+	function getNotReturnedBooks() {
+		$.get("/api/userhistory?userId=" + uId, function(data, status){
+            notReturnedBooks = data;
+			console.log(notReturnedBooks);
+        });
+	}
+
+	function drawTable() {
+		$('#bookTableBody').remove();
+		$('#bookTable').append('<tbody id = "bookTableBody">');
+
+		for(i = 0+(currentPage-1)*pageSize; i < (pageSize+(currentPage-1)*pageSize)  && i < listOfBooks.length; i++){
+			var tempButtonString;
+			if (jQuery.inArray(listOfBooks[i].id, notReturnedBooks) != -1) {
+				tempButtonString = '<td><button type="button" class="btn btn-warning js-return"' + 'data-book-index = "' + i + '" data-book-id = "' + listOfBooks[i].id + '">Return book</button>' +'</td>';
+			}
+			else {
+				tempButtonString = '<td><button type="button" class="btn btn-success js-take"' + 'data-book-index = "' + i + '" data-book-id = "' + listOfBooks[i].id + '">Take book</button>' +'</td>';
+			}
+            var tempDateString = (listOfBooks[i].dateReturned == '2000-01-01T00:00:00') ? '':listOfBooks[i].dateReturned;
+            $('#bookTable').append('<tr><td>' + listOfBooks[i].userName +'</td>' +
+                                    '<td>' + listOfBooks[i].dateTaken.replace(/T/g , "/") + '</td>' +
+                                    '<td>' + tempDateString.replace(/T/g , "/") + '</td></tr>');
+		}
+
+		$('#bookTable').append(  '</tbody>' );
+		console.log(listOfBooks);
+		console.log(currentPage);
+		console.log(pageSize);
+		console.log(i);
+	}
+
+	function drawPageNumbers() {
+		pagesCount = listOfBooks.length;
+		var nav = '';
+		var totalPages = Math.ceil(pagesCount / pageSize);
+		$( "li.numeros" ).each(function() {
+			$( this ).remove();
+		});
+
+		for (var s=0; s<totalPages; s++){
+			nav += '<li class="numeros"><a href="#bookTable">'+(s+1)+'</a></li>';
+		}
+		$(".pag_prev").after(nav);
+		$(".numeros").first().addClass("active");
+
+		//change page
+		$(".pagination li.numeros").click(function() {
+			$(".pagination li").removeClass("active");
+			$(this).addClass("active");
+			currentPage = parseInt($(this).text());
+			drawTable();
+		});
+
+		$(".pagination li.pag_prev").click(function() {
+			if($(this).next().is('.active')) return;
+			$('.numeros.active').removeClass('active').prev().addClass('active');
+			currentPage = currentPage > 1 ? (currentPage-1) : 1;
+			drawTable();
+		});
+
+		$(".pagination li.pag_next").click(function() {
+			if($(this).prev().is('.active')) return;
+			$('.numeros.active').removeClass('active').next().addClass('active');
+			currentPage = currentPage < totalPages ? (currentPage+1) : totalPages;
+			drawTable();
+		});
+	}
+
+    $(document).ready(function () {
+		getNotReturnedBooks();
+		getBooksHistory();
+	});
+</script>
+}
+
+

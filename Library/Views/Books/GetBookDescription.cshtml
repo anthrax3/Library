@@ -1,0 +1,13 @@
+﻿@model Library.Models.FullBook
+@using Microsoft.AspNet.Identity
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>
+    <span>@Model.Title</span>
+    <span> by </span>
+    <span>@Model.Authors</span>
+</h2>
+
+<h4>@Model.Description</h4>

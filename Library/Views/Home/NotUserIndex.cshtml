@@ -1,0 +1,198 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+@using Microsoft.AspNet.Identity;
+
+<h2>Books in our library</h2>
+<h3>Register or Log in to take a book</h3>
+
+<br/>
+
+<div>
+	<container class='col-md-2'>
+			<div class="dropdown">
+				<button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">Sort by
+				<span class="caret"></span></button>
+				<ul class="dropdown-menu">
+					<li><a href="#bookTable" id="sortTitle">Title</a></li>
+					<li><a href="#bookTable" id="sortAuthors">Authors</a></li>
+				</ul>
+			</div>
+	</container>
+	<container class='col-md-2'>
+			<div class="checkbox">
+				<label><input id="onlyAvailableMeCheckbox" type="checkbox" value="">Only available</label>
+			</div>
+	</container>
+</div>
+
+<table id = "bookTable" class="table table-hover">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Authors</th>
+            <th>Left in stock</th>
+        </tr>
+    </thead>
+</table>
+
+<nav class="text-center">
+    <ul class="pagination">
+        <li class="pag_prev">
+            <a href="#bookTable" aria-label="Previous">
+                <span aria-hidden="true">&laquo;</span>
+            </a>
+        </li>
+        <li class="pag_next">
+            <a href="#bookTable" aria-label="Next">
+                <span aria-hidden="true">&raquo;</span>
+            </a>
+        </li>
+    </ul>
+</nav>
+
+@section scripts {
+<script>
+    var listOfBooks;
+	var filteredListOfBooks;
+	var bookIndex;
+	pageSize = 8;
+	var currentPage = 1;
+	
+	function getBooks() {
+		$.get("/api/books", function(data, status){
+            window.listOfBooks = data;
+			window.filteredListOfBooks = data;
+			drawTable();
+			drawPageNumbers();
+        });
+	}
+
+	function drawTable() {
+		$('#bookTableBody').remove();
+		$('#bookTable').append('<tbody id = "bookTableBody">');
+
+		for(i = 0+(currentPage-1)*pageSize; i < (pageSize+(currentPage-1)*pageSize)  && i < filteredListOfBooks.length; i++){
+            $('#bookTable').append('<tr><td><a href = "/books/getbook/' + filteredListOfBooks[i].id + '"><div>' + filteredListOfBooks[i].title +'</div></a></td>' +
+                                    '<td>' + filteredListOfBooks[i].authors +'</td>' +
+                                    '<td>' + filteredListOfBooks[i].leftInStock + '</td></tr>');
+		}
+
+		$('#bookTable').append(  '</tbody>' );
+	}
+	
+	function drawPageNumbers() {
+		pagesCount = filteredListOfBooks.length;
+		var nav = '';
+		var totalPages = Math.ceil(pagesCount / pageSize);
+		$( "li.numeros" ).each(function() {
+			$( this ).remove();
+		});
+		
+		for (var s=0; s<totalPages; s++){
+			nav += '<li class="numeros"><a href="#bookTable">'+(s+1)+'</a></li>';
+		}
+		$(".pag_prev").after(nav);
+		$(".numeros").first().addClass("active");
+		
+		//change page
+		$(".pagination li.numeros").click(function() {
+			$(".pagination li").removeClass("active");
+			$(this).addClass("active");
+			currentPage = parseInt($(this).text());
+			drawTable();
+		});
+
+		$(".pagination li.pag_prev").click(function() {
+			if($(this).next().is('.active')) return;
+			$('.numeros.active').removeClass('active').prev().addClass('active');
+			currentPage = currentPage > 1 ? (currentPage-1) : 1;
+			drawTable();
+		});
+
+		$(".pagination li.pag_next").click(function() {
+			if($(this).prev().is('.active')) return;
+			$('.numeros.active').removeClass('active').next().addClass('active');
+			currentPage = currentPage < totalPages ? (currentPage+1) : totalPages;
+			drawTable();
+		});
+	}
+
+    $(document).ready(function () {
+		getBooks();
+		
+		function SortByTitleAsc(a, b){
+			var aName = a.title.toLowerCase();
+			var bName = b.title.toLowerCase(); 
+			return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+		}
+		function SortByTitleDesc(a, b){
+			var aName = a.title.toLowerCase();
+			var bName = b.title.toLowerCase(); 
+			return ((aName > bName) ? -1 : ((aName < bName) ? 1 : 0));
+		}
+		
+		$('#sortTitle').on('click', function() {
+			var direction;
+			if (!window.sortTAsc) {
+				window.sortTAsc = true;
+				window.listOfBooks.sort(SortByTitleAsc);
+			}
+			else {
+				window.sortTAsc = false;
+				window.listOfBooks.sort(SortByTitleDesc);
+			}
+			
+			drawTable();
+		});
+		
+		function SortByAuthorsAsc(a, b){
+			var aName = a.authors.toLowerCase();
+			var bName = b.authors.toLowerCase(); 
+			return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
+		}
+		function SortByAuthorsDesc(a, b){
+			var aName = a.authors.toLowerCase();
+			var bName = b.authors.toLowerCase(); 
+			return ((aName > bName) ? -1 : ((aName < bName) ? 1 : 0));
+		}
+		
+		$('#sortAuthors').on('click', function() {
+			var direction;
+			if (!window.sortAAsc) {
+				window.sortAAsc = true;
+				window.listOfBooks.sort(SortByAuthorsAsc);
+			}
+			else {
+				window.sortAAsc = false;
+				window.listOfBooks.sort(SortByAuthorsDesc);
+			}
+			
+			drawTable();
+		});
+		
+		function filterListOfBooks() {
+		if (!($('#onlyAvailableMeCheckbox').is(":checked"))) {
+			window.filteredListOfBooks = window.listOfBooks;
+			return true;
+		}
+		
+		window.filteredListOfBooks=[];
+		for (var i = 0; i < window.listOfBooks.length; i++) {
+			if ($('#onlyAvailableMeCheckbox').is(":checked") && window.listOfBooks[i].leftInStock < 1)
+				continue;
+			
+			
+			filteredListOfBooks.push(window.listOfBooks[i]);
+			}
+		return true;
+		}
+		
+		$('#onlyAvailableMeCheckbox').on('click', function() {
+			filterListOfBooks();
+			drawTable();
+			drawPageNumbers();
+		});
+	});
+</script>
+}
