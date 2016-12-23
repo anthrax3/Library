@@ -1,6 +1,7 @@
 ﻿using Library.Models;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Library.Repositories
 {
     public class BookRepository
     {
-        private static readonly string connectionString = "Data Source=(LocalDb)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\\LibraryDB.mdf;Initial Catalog=LibraryDB;Integrated Security=True;";
+        private static readonly string connectionString = ConfigurationManager.ConnectionStrings["DefaultDBConnection"].ConnectionString;
 
         public static FullBook GetBook(int id)
         {

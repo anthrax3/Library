@@ -66,18 +66,7 @@
 </table>
 
 <nav class="text-center">
-    <ul class="pagination">
-        <li class="pag_prev">
-            <a href="#bookTable" aria-label="Previous">
-                <span aria-hidden="true">&laquo;</span>
-            </a>
-        </li>
-        <li class="pag_next">
-            <a href="#bookTable" aria-label="Next">
-                <span aria-hidden="true">&raquo;</span>
-            </a>
-        </li>
-    </ul>
+    <ul class="pagination"></ul>
 </nav>
 
 @section scripts {
@@ -86,10 +75,12 @@
 	var filteredListOfBooks;
 	var notReturnedBooks;
 	var bookIndex;
+    var totalPages
+    var startDrawPage = 1;
 	pageSize = 8;
 	var currentPage = 1;
     var uId = '@User.Identity.GetUserId()';
-	
+
 	function getBooks() {
 		$.get("/api/books", function(data, status){
             window.listOfBooks = data;
@@ -98,10 +89,10 @@
 			drawPageNumbers();
         });
 	}
-	
+
 	function getNotReturnedBooks() {
 		$.get("/api/userhistory?userId=" + uId, function(data, status){
-            notReturnedBooks = data;
+            window.notReturnedBooks = data;
 			console.log(notReturnedBooks);
         });
 	}
@@ -110,9 +101,9 @@
 		$('#bookTableBody').remove();
 		$('#bookTable').append('<tbody id = "bookTableBody">');
 
-		for(i = 0+(currentPage-1)*pageSize; i < (pageSize+(currentPage-1)*pageSize)  && i < filteredListOfBooks.length; i++){
+		for(i = 0+(window.currentPage-1)*pageSize; i < (pageSize+(window.currentPage-1)*pageSize)  && i < filteredListOfBooks.length; i++){
 			var tempButtonString;
-			if (jQuery.inArray(filteredListOfBooks[i].id, notReturnedBooks) != -1) {
+			if (jQuery.inArray(filteredListOfBooks[i].id, window.notReturnedBooks) != -1) {
 				tempButtonString = '<td><button type="button" class="btn btn-warning js-return"' + 'data-book-index = "' + i + '" data-book-id = "' + filteredListOfBooks[i].id + '">Return book</button>' +'</td>';
 			}
 			else {
@@ -128,41 +119,62 @@
 
 		$('#bookTable').append(  '</tbody>' );
 	}
-	
+
 	function drawPageNumbers() {
-		pagesCount = filteredListOfBooks.length;
-		var nav = '';
-		var totalPages = Math.ceil(pagesCount / pageSize);
-		$( "li.numeros" ).each(function() {
+		pagesCount = window.filteredListOfBooks.length;
+		var nav = '<li class="pag_prev"><a href="#bookTable" aria-label="Previous"><span aria-hidden="true">&laquo;</span></a></li>';
+		window.totalPages = Math.ceil(pagesCount / pageSize);
+		$( "ul.pagination > li" ).each(function() {
 			$( this ).remove();
 		});
-		
-		for (var s=0; s<totalPages; s++){
-			nav += '<li class="numeros"><a href="#bookTable">'+(s+1)+'</a></li>';
+
+        var count = 0
+		for (var s=window.startDrawPage; s<=window.totalPages && count < 5; s++, count++){
+			nav += '<li class="numeros"><a href="#bookTable">'+(s)+'</a></li>';
 		}
-		$(".pag_prev").after(nav);
-		$(".numeros").first().addClass("active");
-		
-		//change page
-		$(".pagination li.numeros").click(function() {
-			$(".pagination li").removeClass("active");
-			$(this).addClass("active");
-			currentPage = parseInt($(this).text());
+        nav += '<li class="pag_next"><a href="#bookTable" aria-label="Next"><span aria-hidden="true">&raquo;</span></a></li>';
+
+        $('.pagination').append(nav);
+		$(".numeros:contains('" + window.currentPage + "')").first().addClass("active");
+
+        //change page
+        $(".pagination li.numeros").click(function() {
+			//$(".pagination li").removeClass("active");
+			//$(this).addClass("active");
+			window.currentPage = parseInt($(this).text());
+
+            if (window.currentPage == window.startDrawPage && window.currentPage > 1) window.startDrawPage -= 1;
+            if (window.currentPage == window.startDrawPage+4 && window.currentPage < window.totalPages) window.startDrawPage += 1;
+
 			drawTable();
+            drawPageNumbers();
 		});
 
 		$(".pagination li.pag_prev").click(function() {
-			if($(this).next().is('.active')) return;
-			$('.numeros.active').removeClass('active').prev().addClass('active');
-			currentPage = currentPage > 1 ? (currentPage-1) : 1;
+			if(window.currentPage == 1) return;
+
+			//if($(this).next().is('.active')) return;
+			//$('.numeros.active').removeClass('active').prev().addClass('active');
+			window.currentPage = window.currentPage > 1 ? (window.currentPage-1) : 1;
+
+            if (window.currentPage == window.startDrawPage && window.startDrawPage > 1)
+                window.startDrawPage -= 1;
+
 			drawTable();
+            drawPageNumbers();
 		});
 
 		$(".pagination li.pag_next").click(function() {
-			if($(this).prev().is('.active')) return;
-			$('.numeros.active').removeClass('active').next().addClass('active');
-			currentPage = currentPage < totalPages ? (currentPage+1) : totalPages;
+            if (window.currentPage == window.totalPages) return;
+			//if($(this).prev().is('.active')) return;
+			//$('.numeros.active').removeClass('active').next().addClass('active');
+			window.currentPage = window.currentPage < window.totalPages ? (window.currentPage+1) : window.totalPages;
+
+            if (window.currentPage == window.startDrawPage+4 && window.startDrawPage < window.totalPages && (window.totalPages-window.startDrawPage) >= 5)
+                window.startDrawPage += 1;
+
 			drawTable();
+            drawPageNumbers();
 		});
 	}
 
@@ -263,7 +275,7 @@
 				}
 			});
 		});
-		
+
 		$('#bookTable').on('click', '.js-return', function() {
 			bookIndexReturn = $(this).attr('data-book-index');
 			bookIdReturn = $(this).attr('data-book-id');
@@ -290,18 +302,18 @@
 				}
 			});
 		});
-		
+
 		function SortByTitleAsc(a, b){
 			var aName = a.title.toLowerCase();
-			var bName = b.title.toLowerCase(); 
+			var bName = b.title.toLowerCase();
 			return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
 		}
 		function SortByTitleDesc(a, b){
 			var aName = a.title.toLowerCase();
-			var bName = b.title.toLowerCase(); 
+			var bName = b.title.toLowerCase();
 			return ((aName > bName) ? -1 : ((aName < bName) ? 1 : 0));
 		}
-		
+
 		$('#sortTitle').on('click', function() {
 			var direction;
 			if (!window.sortTAsc) {
@@ -312,21 +324,21 @@
 				window.sortTAsc = false;
 				window.listOfBooks.sort(SortByTitleDesc);
 			}
-			
+
 			drawTable();
 		});
-		
+
 		function SortByAuthorsAsc(a, b){
 			var aName = a.authors.toLowerCase();
-			var bName = b.authors.toLowerCase(); 
+			var bName = b.authors.toLowerCase();
 			return ((aName < bName) ? -1 : ((aName > bName) ? 1 : 0));
 		}
 		function SortByAuthorsDesc(a, b){
 			var aName = a.authors.toLowerCase();
-			var bName = b.authors.toLowerCase(); 
+			var bName = b.authors.toLowerCase();
 			return ((aName > bName) ? -1 : ((aName < bName) ? 1 : 0));
 		}
-		
+
 		$('#sortAuthors').on('click', function() {
 			var direction;
 			if (!window.sortAAsc) {
@@ -337,35 +349,39 @@
 				window.sortAAsc = false;
 				window.listOfBooks.sort(SortByAuthorsDesc);
 			}
-			
+
 			drawTable();
 		});
-		
+
 		function filterListOfBooks() {
 		if (!($('#onlyAvailableMeCheckbox').is(":checked")) && !($('#takenByMeCheckbox').is(":checked"))) {
 			window.filteredListOfBooks = window.listOfBooks;
 			return true;
 		}
-		
+
 		window.filteredListOfBooks=[];
 		for (var i = 0; i < window.listOfBooks.length; i++) {
 			if ($('#onlyAvailableMeCheckbox').is(":checked") && window.listOfBooks[i].leftInStock < 1)
 				continue;
-			
+
 			if ($('#takenByMeCheckbox').is(":checked") && (jQuery.inArray(window.listOfBooks[i].id, notReturnedBooks) == -1))
 				continue;
-			
+
 			filteredListOfBooks.push(window.listOfBooks[i]);
 			}
 		return true;
 		}
-		
+
 		$('#onlyAvailableMeCheckbox').on('click', function() {
+            window.currentPage = 1;
+            window.startDrawPage = 1;
 			filterListOfBooks();
 			drawTable();
 			drawPageNumbers();
 		});
 		$('#takenByMeCheckbox').on('click', function() {
+            window.currentPage = 1;
+            window.startDrawPage = 1;
 			filterListOfBooks();
 			drawTable();
 			drawPageNumbers();

@@ -24,7 +24,7 @@ namespace Library.Identity
 
         public UserStore()
         {
-            this.connectionString = "Data Source=(LocalDb)\\MSSQLLocalDB;AttachDbFilename=|DataDirectory|\\LibraryDB.mdf;Initial Catalog=LibraryDB;Integrated Security=True;";
+            this.connectionString = ConfigurationManager.ConnectionStrings["DefaultDBConnection"].ConnectionString;
         }
 
         public void Dispose()
@@ -50,7 +50,6 @@ namespace Library.Identity
                     command.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
                     command.Parameters.AddWithValue("@securityStamp", user.SecurityStamp);
 
-                    //throw new Exception("@userId: " + user.Id);
                     try
                     {
                         connection.Open();

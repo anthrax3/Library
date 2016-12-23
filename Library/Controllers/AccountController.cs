@@ -9,6 +9,7 @@ using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
 using Library.Models;
 using Library.Identity;
+using System.Net.Mail;
 
 namespace Library.Controllers
 {
@@ -78,6 +79,17 @@ namespace Library.Controllers
         {
             if (ModelState.IsValid)
             {
+                //check if email is correct
+                try
+                {
+                    MailAddress m = new MailAddress(model.UserName);
+                }
+                catch (FormatException)
+                {
+                    AddErrors(new IdentityResult("Email is not valid."));
+                    return View(model);
+                }
+
                 var user = new User() { UserName = model.UserName};
                 var result = await UserManager.CreateAsync(user, model.Password);
                 if (result.Succeeded)

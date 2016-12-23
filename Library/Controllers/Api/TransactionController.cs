@@ -33,7 +33,6 @@ namespace Library.Controllers.Api
 
                         User user = userStore.FindByIdAsync(transaction.UserId).Result;
                         user.sendMail();
-                        Console.WriteLine("Hello, world");
                     }).Start();
 
                     return TransactionRepository.AddTransaction(transaction);

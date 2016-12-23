@@ -7,6 +7,7 @@ using System.Web.Http;
 using Library.Models;
 using Library.Repositories;
 using System.Data;
+using System.Configuration;
 
 namespace Library.Controllers.Api
 {
@@ -27,7 +28,7 @@ namespace Library.Controllers.Api
         //Post api/books
         [HttpPost]
         public int AddBook(FullBook fullBook) {
-            if (User.Identity.IsAuthenticated && User.Identity.Name == "librarytesttask@gmail.com")
+            if (User.Identity.IsAuthenticated && User.Identity.Name.Equals(ConfigurationManager.AppSettings["adminUserName"].ToString()))
                 return BookRepository.AddBook(fullBook);
             return -1;
         }
@@ -36,7 +37,7 @@ namespace Library.Controllers.Api
         [HttpPut]
         public bool AddBook(Book updateBook)
         {
-            if (User.Identity.IsAuthenticated && User.Identity.Name == "librarytesttask@gmail.com")
+            if (User.Identity.IsAuthenticated && User.Identity.Name.Equals(ConfigurationManager.AppSettings["adminUserName"].ToString()))
             {
                 int[] updateData = { updateBook.Id, updateBook.LeftInStock };
                 return BookRepository.UpdateBookQuantity(updateData);
@@ -48,7 +49,7 @@ namespace Library.Controllers.Api
         [HttpDelete]
         public bool DeleteBook(int id)
         {
-            if (User.Identity.IsAuthenticated && User.Identity.Name == "librarytesttask@gmail.com")
+            if (User.Identity.IsAuthenticated && User.Identity.Name.Equals(ConfigurationManager.AppSettings["adminUserName"].ToString()))
                 return BookRepository.DeleteBook(id);
             return false;
         }

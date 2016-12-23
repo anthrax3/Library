@@ -2,6 +2,7 @@
 using Library.Repositories;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -14,7 +15,7 @@ namespace Library.Controllers.Api
         [HttpGet]
         public List<BookHistory> GetBookHistory(int id)
         {
-            if (User.Identity.IsAuthenticated && User.Identity.Name == "librarytesttask@gmail.com")
+            if (User.Identity.IsAuthenticated && User.Identity.Name.Equals(ConfigurationManager.AppSettings["adminUserName"].ToString()))
                 return TransactionRepository.getAllBookTransactions(id);
             return null;
         }
