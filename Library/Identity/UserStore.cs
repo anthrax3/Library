@@ -45,7 +45,7 @@ namespace Library.Identity
                     SqlCommand command = new SqlCommand("INSERT INTO Users(Id, UserName, PasswordHash, SecurityStamp)" + 
                         " VALUES(@userId, @userName, @passwordHash, @securityStamp)", connection);
 
-                    command.Parameters.AddWithValue("@userId", user.Id);
+                    command.Parameters.AddWithValue("@userId", user.UserId);
                     command.Parameters.AddWithValue("@userName", user.UserName);
                     command.Parameters.AddWithValue("@passwordHash", user.PasswordHash);
                     command.Parameters.AddWithValue("@securityStamp", user.SecurityStamp);
@@ -63,7 +63,7 @@ namespace Library.Identity
                     {
                         connection.Close();
                     }
-                    return user.Id;
+                    return user.UserId;
                 }
             });
         }
