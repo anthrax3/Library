@@ -5,6 +5,7 @@ using Library.Repositories;
 using System.Net.Mail;
 using System.Net;
 using System.Text;
+using System.Configuration;
 
 namespace Library.Models
 {
@@ -45,15 +46,16 @@ namespace Library.Models
             }
             mailText.Append("</table></span>");
 
-            using (MailMessage mm = new MailMessage("librarytesttask@gmail.com", UserName))
+            using (MailMessage mm = new MailMessage(ConfigurationManager.AppSettings["mainMailAddress"].ToString(), UserName))
             {
                 mm.Subject = "Your book history report";
                 mm.Body = mailText.ToString();
                 mm.IsBodyHtml = true;
                 SmtpClient smtp = new SmtpClient();
-                smtp.Host = "smtp.gmail.com";
+                smtp.Host = ConfigurationManager.AppSettings["mainMailSmtpHost"].ToString();
                 smtp.EnableSsl = true;
-                NetworkCredential NetworkCred = new NetworkCredential("librarytesttask@gmail.com", "kf135M25");
+                NetworkCredential NetworkCred = new NetworkCredential(ConfigurationManager.AppSettings["mainMailAddress"].ToString(), 
+                    ConfigurationManager.AppSettings["mainMailPassword"].ToString());
                 smtp.UseDefaultCredentials = true;
                 smtp.Credentials = NetworkCred;
                 smtp.Port = 587;
